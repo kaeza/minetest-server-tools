@@ -35,22 +35,48 @@ C1 = '\x01'
 
 cmd = xchat.command
 
-def handle_message(chan, ident, match):
-	message = match.group("message")
-	cmd("recv :%s PRIVMSG %s :%s" % (ident, chan, message))
+# channels[chan]: dict of channels
+# channels[chan][server]: list of idents
+# channels[chan][server][ident]: string
+channels = { }
 
-def handle_action(chan, ident, match):
-	action = match.group("action")
-	cmd("recv :%s PRIVMSG %s :%sACTION %s%s" % (ident, chan, C1, action, C1))
+def add_user(chan, server, ident):
+	if not chan in channels:
+		channels[chan] = { }
+	if not server in channels[chan]:
+		channels[chan][server] = [ ]
+	if not ident in channels[chan][server]:
+		channels[chan][server].append(ident)
+		cmd("recv :%s JOIN %s" % (ident, chan))
 
-def handle_join(chan, ident, match):
-	cmd("recv :%s JOIN %s" % (ident, chan))
-
-def handle_part(chan, ident, match):
+def remove_user(chan, server, ident):
+	if not ((chan   in channels)
+	   and  (server in channels[chan])
+	   and  (ident in channels[chan][server])
+	):
+		return
+	i = channels[chan][server].index(ident)
+	del channels[chan][server][i]
 	if PART_MESSAGE:
 		cmd("recv :%s PART %s :%s" % (ident, chan, PART_MESSAGE))
 	else:
 		cmd("recv :%s PART %s" % (ident, chan))
+
+def handle_message(chan, server, ident, match):
+	add_user(chan, server, ident)
+	message = match.group("message")
+	cmd("recv :%s PRIVMSG %s :%s" % (ident, chan, message))
+
+def handle_action(chan, server, ident, match):
+	add_user(chan, server, ident)
+	action = match.group("action")
+	cmd("recv :%s PRIVMSG %s :%sACTION %s%s" % (ident, chan, C1, action, C1))
+
+def handle_join(chan, server, ident, match):
+	add_user(chan, server, ident)
+
+def handle_part(chan, server, ident, match):
+	remove_user(chan, server, ident)
 
 handlers = (
 	( mt_message_re, handle_message ),
@@ -58,6 +84,19 @@ handlers = (
 	( mt_join_re,    handle_join    ),
 	( mt_part_re,    handle_part    ),
 )
+
+def handle_server_quit(chan, server):
+	if not ((chan in channels) and (server in channels[chan])):
+		return
+	for ident in channels[chan][server]:
+		cmd("recv :%s PART %s :%s" % (ident, chan, "Server quit."))
+
+def quit_cb(word, word_eol, userdata):
+	m = main_re.match(word[0])
+	server = m.group(1)
+	if server in known_servers_map:
+		handle_server_quit(word[2], server)
+		return xchat.EAT_XCHAT
 
 def message_cb(word, word_eol, userdata):
 
@@ -77,11 +116,16 @@ def message_cb(word, word_eol, userdata):
 		if mm:
 			player = mm.group("player")
 			ident = "%s@%s!%s@%s" % (player, server_short, player, server)
-			func(chan, ident, mm)
+			func(chan, server, ident, mm)
 			return xchat.EAT_XCHAT
 
 def unload_cb(userdata):
-	print __module_description__, 'version', __module_version__, ' unloaded.'
+	print __module_description__, "unloading..."
+	for chan in channels:
+		for server in channels[chan]:
+			for ident in channels[chan][server]:
+				cmd("recv :%s PART %s :%s" % (ident, chan, "Fake user removed by mt_irc"))
+	print __module_description__, 'version', __module_version__, ' unloaded!'
 
 xchat.hook_unload(unload_cb)
 
