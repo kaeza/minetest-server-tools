@@ -22,6 +22,7 @@ known_servers_map = {
 	"VE-Survival":  "VE-S",
 	"K-Server":     "K-Sv",
 	"MT-Nostalgia": "MT-N",
+	"KizBot":       "KizB",
 }
 
 main_re = re.compile(r"^:([^!]+)!.*")
@@ -130,5 +131,6 @@ def unload_cb(userdata):
 xchat.hook_unload(unload_cb)
 
 xchat.hook_server("PRIVMSG", message_cb)
+xchat.hook_server("PART", quit_cb)
 
 print __module_description__, 'version', __module_version__, ' loaded.'
