@@ -1,0 +1,14 @@
+
+# Example configuration file for mt_irc.
+# This file may be saved as either `~/mt_irc.conf' or `~/.mt_irc_rc'.
+
+[servers]
+# List of known servers.
+# Key is server bot nick, value is short alias.
+K-Server = K-Sv
+ShadowServer = Sn-S
+VE-Creative = VE-C
+VE-Survival = VE-S
+MT-Nostalgia = MT-N
+KizBot = KizB
+MG-Nore = MGen
