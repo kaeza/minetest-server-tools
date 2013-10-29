@@ -135,19 +135,18 @@ handlers = (
 	( mt_part_re,    handle_part    ),
 )
 
-def handle_server_quit(chan, server):
-	global chanlist
-	chanlist.get(chan).rem(server)
-
 def quit_cb(word, word_eol, userdata):
 	m = main_re.match(word[0])
 	server = m.group(1)
-	if server in known_servers_map:
-		handle_server_quit(word[2], server)
-		return xchat.EAT_XCHAT
+	server_l = server.lower()
+	if server_l in known_servers_map:
+		global chanlist
+		for chan in chanlist.channels:
+			if server_l in chanlist.channels[chan].servers:
+				chanlist.get(chan).rem(server)
+				return
 
 def message_cb(word, word_eol, userdata):
-
 	m = main_re.match(word[0])
 	server = m.group(1)
 	server_l = server.lower()
@@ -290,7 +289,7 @@ def cmd_mt_irc(word, word_eol, userdata):
 xchat.hook_unload(unload_cb)
 
 xchat.hook_server("PRIVMSG", message_cb)
-xchat.hook_server("PART", quit_cb)
+xchat.hook_server("QUIT", quit_cb)
 
 xchat.hook_command("mt_irc", cmd_mt_irc)
 
