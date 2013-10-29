@@ -176,9 +176,7 @@ def unload_cb(userdata):
 subcommands = { }
 
 def doprint(subcmd, message):
-	for line in message.split("\n"):
-		line = "[mt_irc %s] %s" % (subcmd, line)
-		print line
+	print "[mt_irc %s] %s" % (subcmd, message)
 
 def subcmd_server(word, word_eol):
 	"""Manage servers.
@@ -198,7 +196,7 @@ def subcmd_server(word, word_eol):
 				known_servers_map[word[2]] = word[3]
 				doprint('server', 'Server "%s" added as "%s".' % (word[2], word[3]))
 			else:
-				doprint('server', '[mt_irc server] Usage: /mt_irc server add BOTNICK ALIAS')
+				doprint('server', 'Usage: /mt_irc server add BOTNICK ALIAS')
 		elif subcmd == "remove":
 			if len(word) == 3:
 				if word[2] in known_servers_map:
@@ -258,7 +256,7 @@ def subcmd_help(word, word_eol):
 	if len(word) > 1:
 		topic = word[1]
 		if topic in subcommands:
-			doprint(subcommands[topic].__doc__)
+			doprint('help', subcommands[topic].__doc__)
 		else:
 			doprint('help', 'Unknown subcommand "%s". Try "/mt_irc help".' % topic)
 	else:
