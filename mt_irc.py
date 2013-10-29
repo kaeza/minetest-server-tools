@@ -150,10 +150,11 @@ def message_cb(word, word_eol, userdata):
 
 	m = main_re.match(word[0])
 	server = m.group(1)
-	if not server in known_servers_map:
+	server_l = server.lower()
+	if not server_l in known_servers_map:
 		return
 
-	server_short = known_servers_map[server]
+	server_short = known_servers_map[server_l]
 
 	chan = word[2].lower()
 	message = word_eol[3][1:]
