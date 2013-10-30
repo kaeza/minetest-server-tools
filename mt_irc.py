@@ -21,12 +21,13 @@ cfg = ConfigParser()
 cfg.read(CFGFILES)
 
 known_servers_map = { }
+known_servers_map_reverse = { }
 
 if cfg.has_section("servers"):
 	for key in cfg.options("servers"):
-		key = key.lower()
 		name = cfg.get("servers", key)
-		known_servers_map[key] = name
+		known_servers_map[key.lower()] = name
+		known_servers_map_reverse[name.lower()] = key
 		print 'Added server "%s" as "%s".' % (key, name)
 
 main_re = re.compile(r"^:([^!]+)!.*")
@@ -167,6 +168,25 @@ def message_cb(word, word_eol, userdata):
 			func(chan, server, ident, mm)
 			return xchat.EAT_XCHAT
 
+pm_re = re.compile(r'^(?P<player>[^@]+)\@(?P<server>.+)$')
+def out_message_cb(word, word_eol, userdata):
+	chan = xchat.get_info("channel")
+	print "chan = '%s'" % chan
+	m = pm_re.match(chan)
+	if m:
+		print "RE Matches"
+		user = m.group("player")
+		serv = m.group("server")
+		print "user = '%s'" % user
+		print "serv = '%s'" % serv
+		serv_l = serv.lower()
+		if serv_l in known_servers_map_reverse:
+			print "Server known"
+			message = word_eol[1]
+			serv = known_servers_map_reverse[serv_l]
+			xchat.command("msg %s @%s %s" % (serv, user, message))
+			return xchat.EAT_XCHAT
+
 def unload_cb(userdata):
 	print __module_description__, "unloading..."
 	global chanlist
@@ -193,7 +213,8 @@ def subcmd_server(word, word_eol):
 		chan = xchat.get_info("channel")
 		if subcmd == "add":
 			if len(word) == 4:
-				known_servers_map[word[2]] = word[3]
+				known_servers_map[word[2].lower()] = word[3]
+				known_servers_map_reverse[word[3]] = word[2].lower()
 				doprint('server', 'Server "%s" added as "%s".' % (word[2], word[3]))
 			else:
 				doprint('server', 'Usage: /mt_irc server add BOTNICK ALIAS')
@@ -201,7 +222,8 @@ def subcmd_server(word, word_eol):
 			if len(word) == 3:
 				if word[2] in known_servers_map:
 					channels[chan].del_server(word[2])
-					del known_servers_map[word[2]]
+					del known_servers_map_reverse[known_servers_map[word[2].lower()]]
+					del known_servers_map[word[2].lower()]
 					doprint('server', 'Server "%s" removed.' % word[2])
 				else:
 					doprint('server', 'Unknown server "%s".' % word[2])
@@ -290,5 +312,7 @@ xchat.hook_server("PRIVMSG", message_cb)
 xchat.hook_server("QUIT", quit_cb)
 
 xchat.hook_command("mt_irc", cmd_mt_irc)
+
+xchat.hook_print("Your Message", out_message_cb)
 
 print __module_description__, 'version', __module_version__, ' loaded.'
