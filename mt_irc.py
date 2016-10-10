@@ -1,11 +1,16 @@
 
+from __future__ import print_function
+
 __module_name__ = "mt_irc"
 __module_version__ = "0.1.0"
 __module_description__ = "Minetest IRC Mod Support plugin for HexChat/XChat"
 
 import xchat
 
-from ConfigParser import ConfigParser
+try:
+	from ConfigParser import ConfigParser
+except ImportError:
+	from configparser import ConfigParser
 
 import re
 import os
@@ -28,7 +33,7 @@ if cfg.has_section("servers"):
 		name = cfg.get("servers", key)
 		known_servers_map[key.lower()] = name
 		known_servers_map_reverse[name.lower()] = key
-		print 'Added server "%s" as "%s".' % (key, name)
+		print('Added server "%s" as "%s".' % (key, name))
 
 main_re = re.compile(r"^:([^!]+)!.*")
 
@@ -171,32 +176,27 @@ def message_cb(word, word_eol, userdata):
 pm_re = re.compile(r'^(?P<player>[^@]+)\@(?P<server>.+)$')
 def out_message_cb(word, word_eol, userdata):
 	chan = xchat.get_info("channel")
-	print "chan = '%s'" % chan
 	m = pm_re.match(chan)
 	if m:
-		print "RE Matches"
 		user = m.group("player")
 		serv = m.group("server")
-		print "user = '%s'" % user
-		print "serv = '%s'" % serv
 		serv_l = serv.lower()
 		if serv_l in known_servers_map_reverse:
-			print "Server known"
 			message = word_eol[1]
 			serv = known_servers_map_reverse[serv_l]
 			xchat.command("msg %s @%s %s" % (serv, user, message))
 			return xchat.EAT_XCHAT
 
 def unload_cb(userdata):
-	print __module_description__, "unloading..."
+	print(__module_description__, "unloading...")
 	global chanlist
 	del chanlist
-	print __module_description__, 'version', __module_version__, ' unloaded!'
+	print(__module_description__, 'version', __module_version__, ' unloaded!')
 
 subcommands = { }
 
 def doprint(subcmd, message):
-	print "[mt_irc %s] %s" % (subcmd, message)
+	print("[mt_irc %s] %s" % (subcmd, message))
 
 def subcmd_server(word, word_eol):
 	"""Manage servers.
@@ -300,10 +300,10 @@ def cmd_mt_irc(word, word_eol, userdata):
 			subcmd = subcommands[subcmd]
 			subcmd(word[1:], word_eol[1:])
 		else:
-			print '[mt_irc] Unknown subcommand "%s". Try "/mt_irc help".'
+			print('[mt_irc] Unknown subcommand "%s". Try "/mt_irc help".')
 	else:
-		print 'Usage: /mt_irc SUBCOMMAND'
-		print 'Try "/mt_irc help".'
+		print('Usage: /mt_irc SUBCOMMAND')
+		print('Try "/mt_irc help".')
 	return xchat.EAT_XCHAT
 
 xchat.hook_unload(unload_cb)
@@ -315,4 +315,4 @@ xchat.hook_command("mt_irc", cmd_mt_irc)
 
 xchat.hook_print("Your Message", out_message_cb)
 
-print __module_description__, 'version', __module_version__, ' loaded.'
+print(__module_description__, 'version', __module_version__, ' loaded.')
