@@ -40,7 +40,8 @@ main_re = re.compile(r"^:([^!]+)!.*")
 mt_message_re = re.compile(r"^<(?P<player>[^>]+)> (?P<message>.*)")
 mt_action_re = re.compile(r"^\* (?P<player>[^ ]+) (?P<action>.*)")
 mt_join_re = re.compile(r"^\*\*\* (?P<player>[^ ]+) joined the game")
-mt_part_re = re.compile(r"^\*\*\* (?P<player>[^ ]+) left the game")
+mt_part_re = re.compile(r"^\*\*\* (?P<player>[^ ]+) left the game"
+		+ r"(?P<timedout> [(]timed out[)])?")
 
 C1 = '\x01'
 
@@ -64,16 +65,17 @@ class Server:
 			self.users.append(ident_l)
 			cmd("recv :%s JOIN %s" % (ident, self.channame))
 
-	def rem(self, ident, force=False):
+	def rem(self, ident, reason=None, force=False):
+		reason = (" :"+reason) if reason else ""
 		ident_l = ident.lower()
 		if force or (ident_l in self.users):
 			i = self.users.index(ident_l)
 			del self.users[i]
-			cmd("recv :%s PART %s" % (ident, self.channame))
+			cmd("recv :%s PART %s%s" % (ident, self.channame, reason))
 
 	def __del__(self):
 		for ident in self.users[:]:
-			self.rem(ident, True)
+			self.rem(ident, None, True)
 
 class Channel:
 
@@ -114,9 +116,9 @@ def add_user(chan, server, ident):
 	global chanlist
 	chanlist.get(chan).get(server).add(ident)
 
-def del_user(chan, server, ident):
+def del_user(chan, server, ident, reason=None):
 	global chanlist
-	chanlist.get(chan).get(server).rem(ident)
+	chanlist.get(chan).get(server).rem(ident, reason)
 
 def handle_message(chan, server, ident, match):
 	add_user(chan, server, ident)
@@ -132,7 +134,7 @@ def handle_join(chan, server, ident, match):
 	add_user(chan, server, ident)
 
 def handle_part(chan, server, ident, match):
-	del_user(chan, server, ident)
+	del_user(chan, server, ident, "timed out" if match.group(2) else None)
 
 handlers = (
 	( mt_message_re, handle_message ),
