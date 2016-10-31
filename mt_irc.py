@@ -41,7 +41,7 @@ mt_message_re = re.compile(r"^<(?P<player>[^>]+)> (?P<message>.*)")
 mt_action_re = re.compile(r"^\* (?P<player>[^ ]+) (?P<action>.*)")
 mt_join_re = re.compile(r"^\*\*\* (?P<player>[^ ]+) joined the game")
 mt_part_re = re.compile(r"^\*\*\* (?P<player>[^ ]+) left the game"
-		+ r"(?P<timedout> [(]timed out[)])?")
+		+ r"(?P<timedout> [(]Timed out[)])?")
 
 C1 = '\x01'
 
