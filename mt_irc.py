@@ -75,7 +75,7 @@ class Server:
 
 	def __del__(self):
 		for ident in self.users[:]:
-			self.rem(ident, None, True)
+			self.rem(ident, "mt_irc: server deleted", True)
 
 class Channel:
 
@@ -190,8 +190,8 @@ def out_message_cb(word, word_eol, userdata):
 			return xchat.EAT_XCHAT
 
 def unload_cb(userdata):
-	print(__module_description__, "unloading...")
 	global chanlist
+	print(__module_description__, "unloading...")
 	del chanlist
 	print(__module_description__, 'version', __module_version__, ' unloaded!')
 
@@ -215,8 +215,8 @@ def subcmd_server(word, word_eol):
 		chan = xchat.get_info("channel")
 		if subcmd == "add":
 			if len(word) == 4:
-				known_servers_map[word[2].lower()] = word[3]
-				known_servers_map_reverse[word[3]] = word[2].lower()
+				known_servers_map[word[2].lower()] = word[3].lower()
+				known_servers_map_reverse[word[3].lower()] = word[2].lower()
 				doprint('server', 'Server "%s" added as "%s".' % (word[2], word[3]))
 			else:
 				doprint('server', 'Usage: /mt_irc server add BOTNICK ALIAS')
