@@ -6,6 +6,7 @@ __module_version__ = "0.1.0"
 __module_description__ = "Minetest IRC Mod Support plugin for HexChat/XChat"
 
 import xchat
+import string
 
 try:
 	from ConfigParser import ConfigParser
@@ -308,6 +309,44 @@ def cmd_mt_irc(word, word_eol, userdata):
 		print('Try "/mt_irc help".')
 	return xchat.EAT_XCHAT
 
+KEY_TAB = "65289"
+
+nick_chars = string.ascii_lowercase + string.ascii_uppercase + "{|}[\]^`_"
+
+def key_press_cb(word, word_eol, userdata):
+	if word[0] == KEY_TAB:
+		i = xchat.get_info("inputbox")
+		ul = xchat.get_list("users")
+		p = xchat.get_prefs("state_cursor")
+		if p == 0:
+			return
+		sp = p
+		while p > 0 and i[p:p+1] in nick_chars:
+			p -= 1
+		pfx = i[p:sp]
+		comps = [ ]
+		has_fakes = False
+		for u in ul:
+			nick = u.nick
+			if '@' in nick:
+				has_fakes = True
+				nick = nick.split("@")[0]
+			if xchat.nickcmp(pfx, nick[:len(pfx)]) == 0:
+				comps.append(nick)
+		if not has_fakes:
+			return
+		compsfx = xchat.get_prefs("completion_suffix")
+		comps = list(set(comps))
+		comps.sort()
+		if len(comps) > 1:
+			print("  ".join(comps))
+			return xchat.EAT_XCHAT
+		elif len(comps) == 1:
+			toadd = comps[0]+(compsfx if p==0 else "")
+			xchat.command("settext "+i[:p]+toadd+" ")
+			xchat.command("setcursor %d" % (sp + (sp-p) + len(toadd)))
+			return xchat.EAT_XCHAT
+
 xchat.hook_unload(unload_cb)
 
 xchat.hook_server("PRIVMSG", message_cb)
@@ -316,5 +355,7 @@ xchat.hook_server("QUIT", quit_cb)
 xchat.hook_command("mt_irc", cmd_mt_irc)
 
 xchat.hook_print("Your Message", out_message_cb)
+
+xchat.hook_print("Key Press", key_press_cb)
 
 print(__module_description__, 'version', __module_version__, ' loaded.')
