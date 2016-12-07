@@ -71,7 +71,7 @@ class Server:
 		if force or (ident_l in self.users):
 			i = self.users.index(ident_l)
 			del self.users[i]
-			cmd("recv :%s PART %s%s" % (ident, self.channame, reason))
+			cmd("recv :%s QUIT%s" % (ident, reason))
 
 	def __del__(self):
 		for ident in self.users[:]:
@@ -134,7 +134,7 @@ def handle_join(chan, server, ident, match):
 	add_user(chan, server, ident)
 
 def handle_part(chan, server, ident, match):
-	del_user(chan, server, ident, "timed out" if match.group(2) else None)
+	del_user(chan, server, ident, "timed out" if match.group(2) else "left")
 
 handlers = (
 	( mt_message_re, handle_message ),
